@@ -58,6 +58,29 @@ const createPost = async (req , res) => {
   }
 }
 
+const updatePost = async (req , res) => {
+  try{
+    const id = parseInt(req.params.id)
+    const{title , content} = req.body
+    const result = await pool.query(`UPDATE posts
+       SET title = $1,
+           content = $2
+       WHERE id = $3
+       AND author_id = $4
+       RETURNING *`,
+      [title, content, id, req.user.id])
+
+    if(result.length.rows === 0){
+      return res.status(404).json({message:"Post didn't found"})
+    }
+    res.status(200).json(result.rows[0])
+  }catch(error){
+    res.status(500).json({
+      error: err.message
+    })
+  }
+}
+
 
 
 module.exports = {getallposts , getpostbyid , createPost}
