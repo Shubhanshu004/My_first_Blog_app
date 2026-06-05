@@ -7,5 +7,6 @@ const authenticate = require('../middleware/authenticate')
 router.get('/' , postController.getallposts)
 router.get('/:id' , postController.getpostbyid)
 router.post('/' ,authenticate ,  postController.createPost)
+router.patch('/:id' , authenticate , postController.updatePost )
 
 module.exports = router

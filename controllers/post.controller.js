@@ -83,4 +83,4 @@ const updatePost = async (req , res) => {
 
 
 
-module.exports = {getallposts , getpostbyid , createPost}
+module.exports = {getallposts , getpostbyid , createPost , updatePost}
