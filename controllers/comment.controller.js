@@ -1,4 +1,3 @@
-const { param } = require('../app')
 const pool = require('../Database/db')
 
 
@@ -7,9 +6,6 @@ const getComments = async(req , res) => {
   const postid = parseInt(req.params.id)
   const result = await pool.query( `SELECT comments.id, comments.content,comments.parent_id, comments.created_at, users.name AS author_name FROM comments JOIN users ON comments.user_id = users.id WHERE comments.post_id = $1 ORDER BY comments.created_at ASC`, [postid])
 
-  if(result.rows.length === 0 ){
-    return res.status(404).json({message:"Post not Found"})
-  }
   res.status(200).json(result.rows)
   }catch(error){
     res.status(500).json({
@@ -73,12 +69,12 @@ const replyToComment = async (req, res) => {
 const deleteComment = async (req , res) => {
   try{
   const commentId = parseInt(req.params.id)
-  const result = await pool.query( `DELETE FROM comments
-    WHERE id = $1
-    AND user_id = $2
-    RETURNING *`,
-   [commentId, req.user.id]
- )
+  const result = await pool.query(
+    `DELETE FROM comments WHERE id = $1 
+     AND (user_id = $2 OR $3 = 'admin')
+     RETURNING *`,
+    [commentId, req.user.id, req.user.role]
+  )
  if (result.rows.length === 0) {
   return res.status(404).json({
     error: 'Comment not found or unauthorized'
@@ -89,7 +85,7 @@ res.status(200).json({
 })
   }catch(error){
     res.status(500).json({
-      error: err.message
+      error: error.message
     })
   }
 }

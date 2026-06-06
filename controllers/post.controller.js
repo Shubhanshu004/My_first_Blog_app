@@ -1,10 +1,17 @@
-const { error } = require('console');
 const pool = require('../Database/db');
-const { post } = require('../app');
+
 
 const getallposts = async (req , res) => {
   try{
-  const result = await pool.query('SELECT posts.id,posts.title,posts.content, posts.status, posts.created_at, users.id AS author_id, users.name AS author_name FROM posts JOIN users ON posts.author_id = users.id ORDER BY posts.created_at DESC')
+    const result = await pool.query(
+      `SELECT posts.id, posts.title, posts.content, posts.status, 
+              posts.created_at, users.id AS author_id, users.name AS author_name 
+       FROM posts 
+       JOIN users ON posts.author_id = users.id 
+       WHERE posts.status = $1 
+       ORDER BY posts.created_at DESC`,
+      ['published']
+    )
   
   res.status(200).json(result.rows)
  }catch(error){
@@ -37,7 +44,7 @@ const getpostbyid = async (req , res) => {
     res.status(200).json(result.rows[0])
 
   }catch(error){
-    res.status(500).json({ error: err.message })
+    res.status(500).json({ error: error.message })
   }
 }
 const createPost = async (req , res) => {
@@ -87,16 +94,18 @@ const updatePost = async (req , res) => {
 const deletePost = async (req , res) => {
   try{
   const id = parseInt(req.params.id)
-  const result = await pool.query( `DELETE FROM posts
-    WHERE id = $1
-    AND author_id = $2
-    RETURNING *`,
-   [id, req.user.id])
-   if (result.rows.length === 0) {
-    return res.status(404).json({
-      error: 'Post not found or unauthorized'
-    })
-  }
+  const result = await pool.query(`DELETE FROM posts
+ WHERE id = $1
+ AND (author_id = $2 OR $3 = 'admin')
+ RETURNING *`,
+[id, req.user.id, req.user.role]) 
+
+if (result.rows.length === 0) {        
+  return res.status(404).json({
+    error: 'Post not found or unauthorized'
+  })
+}
+  
   res.status(200).json({
     message: 'Post deleted successfully'
   })

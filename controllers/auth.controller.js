@@ -1,7 +1,5 @@
 const pool = require('../Database/db')
 const bcrypt = require('bcrypt')
-const { log } = require('console')
-const { sign } = require('crypto')
 const jwt = require('jsonwebtoken')
 
 const signup = async(req , res) => {
@@ -28,7 +26,7 @@ const login = async (req, res) => {
   [email])
 
   if(result.rows.length === 0){
-    return req.status(404).json({message: "User not found"})
+    return res.status(401).json({message: "Invalid credentials"})
   }
   const user = result.rows[0]
   const ispasswordMatched = await bcrypt.compare(password , user.password) 
