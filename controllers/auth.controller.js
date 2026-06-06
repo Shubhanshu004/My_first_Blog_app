@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken')
 
 const signup = async(req , res) => {
   try{
-    console.log("hitted")
+   
     const {name , email , password} = req.body
     const hashedpassword = await bcrypt.hash(password , 10)
     const result = await pool.query(`INSERT INTO users (name, email, password)

@@ -1,3 +1,4 @@
+const { param } = require('../app')
 const pool = require('../Database/db')
 
 
@@ -37,5 +38,60 @@ const createComment = async(req , res) => {
   }
 }
 
+const replyToComment = async (req, res) => {
+  try {
+    const parent_id = parseInt(req.params.id)
+    const {content} = req.body
+    const author_id = req.user.id
+     // Check parent comment exists
+    const commentResult = await pool.query('SELECT * FROM comments WHERE id = $1' , [parent_id])
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Comment not found'
+      })
+    }
 
-module.exports = {getComments , createComment}
+    const parentComment = commentResult.rows[0]
+
+    //create reply
+    const result = await pool.query(`INSERT INTO comments
+      (content, user_id, post_id, parent_id)
+      VALUES ($1, $2, $3, $4)
+      RETURNING *`,
+      [
+        content,
+        author_id,
+        parentComment.post_id,
+        parent_id
+      ])
+    res.status(201).json(result.rows[0])
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+}
+
+const deleteComment = async (req , res) => {
+  try{
+  const commentId = parseInt(req.params.id)
+  const result = await pool.query( `DELETE FROM comments
+    WHERE id = $1
+    AND user_id = $2
+    RETURNING *`,
+   [commentId, req.user.id]
+ )
+ if (result.rows.length === 0) {
+  return res.status(404).json({
+    error: 'Comment not found or unauthorized'
+  })
+}
+res.status(200).json({
+  message: 'Comment deleted successfully'
+})
+  }catch(error){
+    res.status(500).json({
+      error: err.message
+    })
+  }
+}
+
+module.exports = {getComments , createComment , replyToComment,deleteComment}
