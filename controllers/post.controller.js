@@ -60,8 +60,10 @@ const createPost = async (req , res) => {
 
 const updatePost = async (req , res) => {
   try{
+
     const id = parseInt(req.params.id)
     const{title , content} = req.body
+
     const result = await pool.query(`UPDATE posts
        SET title = $1,
            content = $2
@@ -70,11 +72,35 @@ const updatePost = async (req , res) => {
        RETURNING *`,
       [title, content, id, req.user.id])
 
-    if(result.length.rows === 0){
+    if(result.rows.length === 0){
       return res.status(404).json({message:"Post didn't found"})
     }
     res.status(200).json(result.rows[0])
   }catch(error){
+    res.status(500).json({
+      error:error,
+      message:"Something went wrong"
+    })
+  }
+}
+
+const deletePost = async (req , res) => {
+  try{
+  const id = parseInt(req.params.id)
+  const result = await pool.query( `DELETE FROM posts
+    WHERE id = $1
+    AND author_id = $2
+    RETURNING *`,
+   [id, req.user.id])
+   if (result.rows.length === 0) {
+    return res.status(404).json({
+      error: 'Post not found or unauthorized'
+    })
+  }
+  res.status(200).json({
+    message: 'Post deleted successfully'
+  })
+}catch(err) {
     res.status(500).json({
       error: err.message
     })
@@ -83,4 +109,4 @@ const updatePost = async (req , res) => {
 
 
 
-module.exports = {getallposts , getpostbyid , createPost , updatePost}
+module.exports = {getallposts , getpostbyid , createPost , updatePost , deletePost}
